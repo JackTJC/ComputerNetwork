@@ -154,9 +154,7 @@ Server::Server(int bindPort, const string& addr) {
     cout<<"Server socket listen successfully\n";
 }
 /*
- * Description:
- * Parameter:
- * Example:
+ * Description: this method will run a service in the background after the initialization
  */
 void Server::startService() {
     sockaddr_in clientAddr{};
@@ -177,9 +175,9 @@ void Server::startService() {
     }
 }
 /*
- * Description:
+ * Description: this method can receive the request from local browser and send response to it
  * Parameter:
- * Example:
+ *      clientAddr: cause we use the sendto function, so the addr of client must be saved and used in sendto function
  */
 void Server::responseRequest(sockaddr_in clientAddr) const {
     char inBuffer[IN_BUFF_SIZE];
@@ -193,7 +191,8 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
     ifstream in("../lab1/resources/"+requestDir);
     if (!in)
     {
-        cout<<"No such file or directory\n";
+        cout<<"GET "+requestDir<<":";
+        cout<<"404 Not Found"<<endl;
         string response=constructRequestHeader(404,"Not Found","text/html");
         response+=readHtmlFile("../lab1/resources/404.html");
         strcpy_s(outBuffer,OUT_BUFF_SIZE,response.c_str());
@@ -204,6 +203,8 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
     {
         if(getSuffix(requestDir)=="html")
         {
+            cout<<"GET "+requestDir<<":";
+            cout<<"200 OK"<<endl;
             string response=constructRequestHeader(200,"OK","text/html");
             response+=readHtmlFile("../lab1/resources/"+requestDir);
             strcpy_s(outBuffer,OUT_BUFF_SIZE,response.c_str());
@@ -212,9 +213,11 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
         }
         else
         {
+            cout<<"GET "+requestDir<<":";
+            cout<<"200 OK"<<endl;
             int imgSize=getFileLength("../lab1/resources/"+requestDir);
             char imgBuf[IMAGE_FILE_MAX_LEN];
-            string response=constructRequestHeader(200,"OK","image/png");
+            string response=constructRequestHeader(200,"OK","image/jpg");
             ifstream in("../lab1/resources/"+requestDir,ios::binary);
             in.read(imgBuf,imgSize);
             int len=imgSize+response.length();
