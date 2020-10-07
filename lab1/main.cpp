@@ -2,6 +2,7 @@
 int main()
 {
     //bind self-defined ip
+    //the following bind the local host (127.0.0.1)
     in_addr bindAddr={127,0,0,1};
     //bind all network card
 //    in_addr bindAddr;
