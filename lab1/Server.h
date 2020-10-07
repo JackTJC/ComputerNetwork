@@ -10,6 +10,8 @@
 #include <winsock.h>
 #include <string>
 #include <fstream>
+#include <iostream>
+#include <utility>
 #pragma comment(lib,"ws2_32.lib")
 #define MAXCONN 1
 #define HTML_FILE_MAX_LEN 1024
@@ -33,7 +35,7 @@ using namespace std;
 class Server{
 public:
     Server()=default;
-    Server(int bindPort,const string& addr);
+    Server(int bindPort,in_addr bindAddr,string const &mainDir);
     void startService();
 private:
     int nAddrLen=sizeof(sockaddr);
@@ -41,6 +43,7 @@ private:
     SOCKET Socket{},connectedSocket{};
     sockaddr_in addr{};
     void responseRequest(sockaddr_in) const;
+    string mainDir;
 };
 /*
  * Description: this function create a http response header according to given parameter
@@ -107,14 +110,16 @@ string getSuffix(const string& dir)
  * Description: the constructor of Server class
  * Parameter:
  *      bindPort: the http port to be listened
- *      add: the http address to be bind
+ *      bindAddr: the http address to be bind
+ *      mainDir:  main directory of this web server
  * Example:
  *      Server s=Server(8080,"127.0.0.1");
  *      s.startService();
  *      =>
  *      you can visit web page in http://127.0.0.1:8080/index.html
  */
-Server::Server(int bindPort, const string& addr) {
+Server::Server(int bindPort,in_addr bindAddr,const string &mainDir) {
+    this->mainDir=mainDir;
     if(WSAStartup(0x0101,&this->wsaData))
     {
         cout<<"Server initialize error!\n";
@@ -135,7 +140,7 @@ Server::Server(int bindPort, const string& addr) {
     cout<<"Socket create successfully\n";
     this->addr.sin_family=AF_INET;
     this->addr.sin_port=htons(bindPort);
-    this->addr.sin_addr.S_un.S_addr=INADDR_ANY;
+    this->addr.sin_addr=bindAddr;
     if(bind(this->Socket,(LPSOCKADDR)&(this->addr),sizeof(this->addr))==SOCKET_ERROR)
     {
         cout<<"Server socket bind error\n";
@@ -188,7 +193,7 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
     int firstSpacePos=request.find_first_of(' ');
     int secondSpacePos=request.find_first_of(' ',firstSpacePos+1);
     string requestDir=request.substr(firstSpacePos+1,secondSpacePos-firstSpacePos-1);
-    ifstream in("../lab1/resources/"+requestDir);
+    ifstream in("../"+this->mainDir+requestDir);
     if (!in)
     {
         cout<<"GET "+requestDir<<":";
@@ -206,7 +211,7 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
             cout<<"GET "+requestDir<<":";
             cout<<"200 OK"<<endl;
             string response=constructRequestHeader(200,"OK","text/html");
-            response+=readHtmlFile("../lab1/resources/"+requestDir);
+            response+=readHtmlFile("../"+this->mainDir+requestDir);
             strcpy_s(outBuffer,OUT_BUFF_SIZE,response.c_str());
             sendto(this->connectedSocket,outBuffer,response.length(),0,(LPSOCKADDR)&clientAddr,nAddrLen);
             closesocket(this->connectedSocket);
@@ -215,10 +220,10 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
         {
             cout<<"GET "+requestDir<<":";
             cout<<"200 OK"<<endl;
-            int imgSize=getFileLength("../lab1/resources/"+requestDir);
+            int imgSize=getFileLength("../"+this->mainDir+requestDir);
             char imgBuf[IMAGE_FILE_MAX_LEN];
             string response=constructRequestHeader(200,"OK","image/jpg");
-            ifstream in("../lab1/resources/"+requestDir,ios::binary);
+            ifstream in("../"+this->mainDir+requestDir,ios::binary);
             in.read(imgBuf,imgSize);
             int len=imgSize+response.length();
             if(len>OUT_BUFF_SIZE)

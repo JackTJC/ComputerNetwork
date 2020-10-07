@@ -1,11 +1,9 @@
-#include <iostream>
-#include <winsock.h>
 #include "Server.h"
-#pragma comment(lib,"ws2_32.lib")
-#define MAXCONN 1
-using namespace std;
 int main()
 {
-    Server s=Server(80,"127.0.0.1");
+    in_addr bindAddr={127,0,0,1};
+//    in_addr bindAddr;
+//    bindAddr.S_un.S_addr=INADDR_ANY;
+    Server s=Server(80,bindAddr,"lab1/resources/");
     s.startService();
 }
