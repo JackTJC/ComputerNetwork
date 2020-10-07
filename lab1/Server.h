@@ -1,8 +1,8 @@
 /*
  * Copyright:   None
  * Author:      TianJincai,tianjincai@hotmail.com
- * Date:        2020.10.06
- * Description: this is a simple http server to response simple http request
+ * Date:        2020.10.06-2020.10.07
+ * Description: this is a simple http server backend to response simple http request
  */
 #ifndef LAB1_SERVER_H
 #define LAB1_SERVER_H
@@ -24,9 +24,10 @@ using namespace std;
  * Member:
  *      nAddrLen:           the size of sockaddr
  *      wsaData:            the data structure initialized in WSAStartup()
- *      Socket:             the connected when browser connect to the background server
+ *      Socket:             the connected socket when browser connect to the background server
  *      connectedSocket:    the socket used in tcp connection
  *      addr:               the data structure used in bind function
+ *      mainDir:            the main directory of the http server
  * Method:
  *      Server(int,const string&):          constructor when give the listen port and bind address
  *      void startService():                start the service in background and output the log of connection
@@ -113,10 +114,11 @@ string getSuffix(const string& dir)
  *      bindAddr: the http address to be bind
  *      mainDir:  main directory of this web server
  * Example:
- *      Server s=Server(8080,"127.0.0.1");
+ *      in_addr bindAddr={127,0,0,1};
+ *      Server s=Server(8080,bindAddr,"lab1/resources1/");
  *      s.startService();
  *      =>
- *      you can visit web page in http://127.0.0.1:8080/index.html
+ *      you can visit the web page by url http://127.0.0.1:8080/index.html
  */
 Server::Server(int bindPort,in_addr bindAddr,const string &mainDir) {
     this->mainDir=mainDir;
@@ -159,13 +161,15 @@ Server::Server(int bindPort,in_addr bindAddr,const string &mainDir) {
     cout<<"Server socket listen successfully\n";
 }
 /*
- * Description: this method will run a service in the background after the initialization
+ * Description: this method will run a service in the background after the initialization and it will
+ *              continuously run util use "Ctrl+C" to stop it
  */
 void Server::startService() {
     sockaddr_in clientAddr{};
     cout<<"Wait for client connect...\n";
     while (true)
     {
+        //accept a socket connection from browser
         this->connectedSocket=accept(this->Socket,(LPSOCKADDR)&clientAddr,&nAddrLen);
         if(this->connectedSocket==INVALID_SOCKET)
         {
@@ -190,23 +194,24 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
     string request;
     recv(this->connectedSocket,inBuffer,IN_BUFF_SIZE,0);
     request=inBuffer;
+    //get the request directory
     int firstSpacePos=request.find_first_of(' ');
     int secondSpacePos=request.find_first_of(' ',firstSpacePos+1);
     string requestDir=request.substr(firstSpacePos+1,secondSpacePos-firstSpacePos-1);
     ifstream in("../"+this->mainDir+requestDir);
-    if (!in)
+    if (!in)//if this file doesn't exist
     {
         cout<<"GET "+requestDir<<":";
         cout<<"404 Not Found"<<endl;
         string response=constructRequestHeader(404,"Not Found","text/html");
-        response+=readHtmlFile("../lab1/resources/404.html");
+        response+=readHtmlFile("../lab1/resources1/404.html");
         strcpy_s(outBuffer,OUT_BUFF_SIZE,response.c_str());
         sendto(this->connectedSocket,outBuffer,response.length(),0,(LPSOCKADDR)&clientAddr,nAddrLen);
         closesocket(this->connectedSocket);
     }
     else
     {
-        if(getSuffix(requestDir)=="html")
+        if(getSuffix(requestDir)=="html")//when request for a "html" file
         {
             cout<<"GET "+requestDir<<":";
             cout<<"200 OK"<<endl;
@@ -216,16 +221,16 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
             sendto(this->connectedSocket,outBuffer,response.length(),0,(LPSOCKADDR)&clientAddr,nAddrLen);
             closesocket(this->connectedSocket);
         }
-        else
+        else//other file format, such as png
         {
             cout<<"GET "+requestDir<<":";
             cout<<"200 OK"<<endl;
             int imgSize=getFileLength("../"+this->mainDir+requestDir);
             char imgBuf[IMAGE_FILE_MAX_LEN];
             string response=constructRequestHeader(200,"OK","image/jpg");
-            ifstream in("../"+this->mainDir+requestDir,ios::binary);
+            ifstream in("../"+this->mainDir+requestDir,ios::binary);//use "binary" mode to read by byte stream
             in.read(imgBuf,imgSize);
-            int len=imgSize+response.length();
+            int len=imgSize+response.length();//the length of this response, include the header
             if(len>OUT_BUFF_SIZE)
             {
                 cout<<"Buffer overflow!\n";
