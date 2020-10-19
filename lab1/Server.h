@@ -204,7 +204,7 @@ void Server::responseRequest(sockaddr_in clientAddr) const {
         cout<<"GET "+requestDir<<":";
         cout<<"404 Not Found"<<endl;
         string response=constructRequestHeader(404,"Not Found","text/html");
-        response+=readHtmlFile("../lab1/resources1/404.html");
+        response+=readHtmlFile("../resources1/404.html");
         strcpy_s(outBuffer,OUT_BUFF_SIZE,response.c_str());
         sendto(this->connectedSocket,outBuffer,response.length(),0,(LPSOCKADDR)&clientAddr,nAddrLen);
         closesocket(this->connectedSocket);
