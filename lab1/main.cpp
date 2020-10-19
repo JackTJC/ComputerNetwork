@@ -7,6 +7,6 @@ int main()
     //bind all network card
 //    in_addr bindAddr;
 //    bindAddr.S_un.S_addr=INADDR_ANY;
-    Server s=Server(80,bindAddr,"lab1/resources2/");
+    Server s=Server(8080,bindAddr,"lab1/resources2/");
     s.startService();
 }
