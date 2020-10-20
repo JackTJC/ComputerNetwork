@@ -6,6 +6,14 @@
 #include "Global.h"
 #include "RdtSender.h"
 #include "RdtReceiver.h"
+#define PC
+#ifdef PC
+#define INPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/input.txt"
+#define OUTPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/output.txt"
+#else
+#define INPUT "/mnt/c/Users/JackTian/Development/Program/CXXProject/ComputeNetwork/lab2/input.txt"
+#define OUTPUT "/mnt/c/Users/JackTian/Development/Program/CXXProject/ComputeNetwork/lab2/output.txt"
+#endif
 
 
 int main(int argc, char* argv[])
@@ -17,8 +25,8 @@ int main(int argc, char* argv[])
     pns->init();
     pns->setRtdSender(ps);
     pns->setRtdReceiver(pr);
-    pns->setInputFile("/mnt/c/Users/JackTian/Development/Program/CXXProject/ComputeNetwork/lab2/input.txt");
-    pns->setOutputFile("/mnt/c/Users/JackTian/Development/Program/CXXProject/ComputeNetwork/lab2/output.txt");
+    pns->setInputFile(INPUT);
+    pns->setOutputFile(OUTPUT);
 
     pns->start();
 

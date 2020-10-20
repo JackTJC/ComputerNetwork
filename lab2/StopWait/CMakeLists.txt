@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.10)
-
 project(lab2)
 
 SET(CMAKE_C_COMPTLER GCC)
