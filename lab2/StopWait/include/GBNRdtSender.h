@@ -5,6 +5,7 @@
 #ifndef STOPWAIT_GBNRDTSENDER_H
 #define STOPWAIT_GBNRDTSENDER_H
 #define WINDOW_SIZE 10
+#define MAX_BUFF_SIZE 100
 #include "RdtSender.h"
 #include "Global.h"
 #include <list>
@@ -20,8 +21,7 @@ private:
     bool waitingState;
     int base;
     int nextSeqNum;
-    list<Packet> sentPackets;
-    bool isTimerStart;
+    Packet sntPkt[MAX_BUFF_SIZE];
 public:
     bool getWaitingState();
     bool send(const Message &message);
@@ -31,7 +31,7 @@ public:
     GBNRdtSender();
     virtual ~GBNRdtSender();
 };
-GBNRdtSender::GBNRdtSender():base(0),nextSeqNum(0),waitingState(false),isTimerStart(false)
+GBNRdtSender::GBNRdtSender():base(1),nextSeqNum(1),waitingState(false)
 {
 }
 GBNRdtSender::~GBNRdtSender() noexcept {}
@@ -41,53 +41,46 @@ bool GBNRdtSender::getWaitingState() {
 bool GBNRdtSender::send(const Message &message) {
     if(this->waitingState)
         return false;
-    Packet curPkt;
-    curPkt.acknum=-1;
-    curPkt.checksum=0;
-    curPkt.seqnum=nextSeqNum++;
-    memcpy(curPkt.payload, message.data, sizeof(message.data));
-    curPkt.checksum = pUtils->calculateCheckSum(curPkt);
-    pUtils->printPacket("发送方发送报文", curPkt);
-    if(!isTimerStart)
+    if(this->nextSeqNum<this->base+WINDOW_SIZE)
     {
-        pns->startTimer(SENDER,Configuration::TIME_OUT,this->base);
-        this->isTimerStart=true;
+        Packet curPkt;
+        curPkt.acknum=-1;
+        curPkt.checksum=0;
+        curPkt.seqnum=this->nextSeqNum;
+        memcpy(curPkt.payload, message.data, sizeof(message.data));
+        curPkt.checksum = pUtils->calculateCheckSum(curPkt);
+        pUtils->printPacket("发送方发送报文", curPkt);
+        sntPkt[this->nextSeqNum]=curPkt;
+        pns->sendToNetworkLayer(RECEIVER,curPkt);
+        if(this->base==this->nextSeqNum)
+            pns->startTimer(SENDER,Configuration::TIME_OUT,this->base);
+        return true;
     }
-    this->sentPackets.push_back(curPkt);
-    pns->sendToNetworkLayer(RECEIVER,curPkt);
-    //check the window full or not
-    if(this->nextSeqNum-this->base==WINDOW_SIZE)
+    else
         this->waitingState=true;
-    return true;
 }
 void GBNRdtSender::receive(const Packet &ackPkt) {
-//In GBN we use accumulative confirmation
-//with ack(n) we can think that seqnum<n have been confirmed
-    if(this->waitingState)
-    {
+
         int checkSum=pUtils->calculateCheckSum(ackPkt);
         //check OK
-        if(ackPkt.checksum==checkSum)
-        {
-            pUtils->printPacket("接收方正确收到确认",ackPkt);
-            this->sentPackets.remove_if(JudgeRemove(ackPkt.acknum));//when seqnum<n
-            pns->stopTimer(SENDER,this->base);
-            this->base=ackPkt.acknum+1;
-            pns->startTimer(SENDER,Configuration::TIME_OUT,this->base);
-            this->isTimerStart=true;
+        if(ackPkt.checksum==checkSum) {
+            pUtils->printPacket("发送方正确收到确认", ackPkt);
+            this->base = ackPkt.acknum + 1;
+            if (this->base == this->nextSeqNum)
+                pns->stopTimer(SENDER, this->nextSeqNum);
+            else
+                pns->startTimer(SENDER, Configuration::TIME_OUT, this->nextSeqNum);
         }
-    }
 }
 
 void GBNRdtSender::timeoutHandler(int seqNum) {
 //Resend the data sent but with no ack
-    for(const Packet& pkt:this->sentPackets)
+    for(int i=this->base;i<=this->nextSeqNum-1;i++)
     {
-        pUtils->printPacket("发送放重新发送报文",pkt);
-        pns->stopTimer(SENDER,seqNum);
-        pns->startTimer(SENDER,Configuration::TIME_OUT,this->base);
-        this->isTimerStart=true;
-        pns->sendToNetworkLayer(RECEIVER,pkt);
+        pns->stopTimer(SENDER,i);
+        pns->startTimer(SENDER,Configuration::TIME_OUT,i);
+        pUtils->printPacket("发送发重新发送报文",this->sntPkt[i]);
+        pns->sendToNetworkLayer(RECEIVER,this->sntPkt[i]);
     }
 }
 #endif //STOPWAIT_GBNRDTSENDER_H
