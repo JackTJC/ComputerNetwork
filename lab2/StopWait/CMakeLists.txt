@@ -15,3 +15,5 @@ TARGET_LINK_LIBRARIES(stop_wait  ${NETSIM_LIB})
 add_executable(gbn ${PROJECT_SOURCE_DIR}/src/GBN.cpp)
 TARGET_LINK_LIBRARIES(gbn ${NETSIM_LIB})
 #SR
+add_executable(sr ${PROJECT_SOURCE_DIR}/src/SR.cpp)
+TARGET_LINK_LIBRARIES(sr ${NETSIM_LIB})
