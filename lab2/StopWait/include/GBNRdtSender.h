@@ -5,17 +5,11 @@
 #ifndef STOPWAIT_GBNRDTSENDER_H
 #define STOPWAIT_GBNRDTSENDER_H
 #define WINDOW_SIZE 10
-#define MAX_BUFF_SIZE 100
+#define MAX_BUFF_SIZE 512
 #include "RdtSender.h"
 #include "Global.h"
-#include <list>
 using namespace  std;
-class JudgeRemove{
-    int n;
-public:
-    JudgeRemove(int n){this->n=n;};
-    bool operator ()(Packet &pkt) const{return pkt.seqnum<=n;};
-};
+
 class GBNRdtSender: public RdtSender{
 private:
     bool waitingState;
@@ -39,8 +33,6 @@ bool GBNRdtSender::getWaitingState() {
     return this->waitingState;
 }
 bool GBNRdtSender::send(const Message &message) {
-    if(this->waitingState)
-        return false;
     if(this->nextSeqNum<this->base+WINDOW_SIZE)
     {
         Packet curPkt;
@@ -54,23 +46,24 @@ bool GBNRdtSender::send(const Message &message) {
         pns->sendToNetworkLayer(RECEIVER,curPkt);
         if(this->base==this->nextSeqNum)
             pns->startTimer(SENDER,Configuration::TIME_OUT,this->base);
+        this->nextSeqNum++;
         return true;
+    }else
+    {
+        this->waitingState = true;
+        return false;
     }
-    else
-        this->waitingState=true;
 }
 void GBNRdtSender::receive(const Packet &ackPkt) {
-
-        int checkSum=pUtils->calculateCheckSum(ackPkt);
-        //check OK
-        if(ackPkt.checksum==checkSum) {
-            pUtils->printPacket("发送方正确收到确认", ackPkt);
-            this->base = ackPkt.acknum + 1;
-            if (this->base == this->nextSeqNum)
-                pns->stopTimer(SENDER, this->nextSeqNum);
-            else
-                pns->startTimer(SENDER, Configuration::TIME_OUT, this->nextSeqNum);
-        }
+    int checkSum=pUtils->calculateCheckSum(ackPkt);
+    if(ackPkt.checksum==checkSum) {
+        pUtils->printPacket("发送方正确收到确认", ackPkt);
+        this->base = ackPkt.acknum + 1;
+        if (this->base == this->nextSeqNum)
+            pns->stopTimer(SENDER, this->nextSeqNum);
+        else
+            pns->startTimer(SENDER, Configuration::TIME_OUT, this->nextSeqNum);
+    }
 }
 
 void GBNRdtSender::timeoutHandler(int seqNum) {
