@@ -6,7 +6,7 @@
 #include "Global.h"
 #include "RdtSender.h"
 #include "RdtReceiver.h"
-#define PC
+//#define PC
 #ifdef PC
 #define INPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/input.txt"
 #define OUTPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/output.txt"
