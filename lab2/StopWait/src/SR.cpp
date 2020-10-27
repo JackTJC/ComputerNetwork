@@ -5,8 +5,6 @@
 #include "SRRdtSender.h"
 #include "SRRdtReceiver.h"
 #include "Global.h"
-#include "RdtSender.h"
-#include "RdtReceiver.h"
 #ifdef PC
 #define INPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/input.txt"
 #define OUTPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/output.txt"

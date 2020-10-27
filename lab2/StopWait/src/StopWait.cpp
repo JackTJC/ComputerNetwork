@@ -3,8 +3,6 @@
 
 
 #include "Global.h"
-#include "RdtSender.h"
-#include "RdtReceiver.h"
 #include "StopWaitRdtSender.h"
 #include "StopWaitRdtReceiver.h"
 //#define PC

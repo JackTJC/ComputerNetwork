@@ -32,6 +32,12 @@ GBNRdtSender::~GBNRdtSender() noexcept {}
 bool GBNRdtSender::getWaitingState() {
     return this->waitingState;
 }
+/**
+ * send packet when the the window  not full, and if it is the begin of a group,
+ * we start the timer
+ * @param message
+ * @return
+ */
 bool GBNRdtSender::send(const Message &message) {
     if(this->nextSeqNum<this->base+WINDOW_SIZE)
     {
@@ -54,6 +60,11 @@ bool GBNRdtSender::send(const Message &message) {
         return false;
     }
 }
+/**
+ * receive the acknowledge packet, and use the accumulative ack to update the base,
+ * then if the base reach to the next sequence number we stop the timer for this group
+ * @param ackPkt
+ */
 void GBNRdtSender::receive(const Packet &ackPkt) {
     int checkSum=pUtils->calculateCheckSum(ackPkt);
     if(ackPkt.checksum==checkSum) {
@@ -61,13 +72,15 @@ void GBNRdtSender::receive(const Packet &ackPkt) {
         this->base = ackPkt.acknum + 1;
         if (this->base == this->nextSeqNum)
             pns->stopTimer(SENDER, this->nextSeqNum);
-        else
-            pns->startTimer(SENDER, Configuration::TIME_OUT, this->nextSeqNum);
+//        else
+//            pns->startTimer(SENDER, Configuration::TIME_OUT, this->nextSeqNum);
     }
 }
-
+/**
+ * if the time out happens, we resend the packet have been sent but with no acknowledge packet.
+ * @param seqNum
+ */
 void GBNRdtSender::timeoutHandler(int seqNum) {
-//Resend the data sent but with no ack
     for(int i=this->base;i<=this->nextSeqNum-1;i++)
     {
         pns->stopTimer(SENDER,i);

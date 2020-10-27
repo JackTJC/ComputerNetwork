@@ -21,6 +21,12 @@ GBNRdtReceiver::GBNRdtReceiver():expectedSeqNum(1) {
     this->sndPkt.checksum=0;
     this->sndPkt.checksum=pUtils->calculateCheckSum(this->sndPkt);
 }
+/**
+ * when receive a correct packet and it contains out expected sequence number, we send the
+ * acknowledge packet with our new expected acknowledge number, otherwise we send old packet
+ * with old acknowledge number.
+ * @param packet
+ */
 void GBNRdtReceiver::receive(const Packet &packet) {
     //检验校验和
     int checkSum=pUtils->calculateCheckSum(packet);

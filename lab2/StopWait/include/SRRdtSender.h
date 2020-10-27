@@ -29,6 +29,12 @@ SRRdtSender::~SRRdtSender() noexcept {}
 bool SRRdtSender::getWaitingState(){
     return this->waitingState;
 }
+/**
+ * send a packet if the sender's window is not full, and start a a timer for each single
+ * packet
+ * @param message
+ * @return
+ */
 bool SRRdtSender::send(const Message &message) {
     if(this->nextSeqNum<this->send_base+WINDOW_SIZE)
     {
@@ -41,8 +47,7 @@ bool SRRdtSender::send(const Message &message) {
         pUtils->printPacket("发送方发送报文", curPkt);
         this->sntPkt[this->nextSeqNum]=curPkt;
         pns->sendToNetworkLayer(RECEIVER,curPkt);
-        if(this->send_base==this->nextSeqNum)
-            pns->startTimer(SENDER,Configuration::TIME_OUT,this->send_base);
+        pns->startTimer(SENDER,Configuration::TIME_OUT,this->nextSeqNum);
         this->nextSeqNum++;
         return true;
     }
@@ -52,17 +57,22 @@ bool SRRdtSender::send(const Message &message) {
         return false;
     }
 }
+/**
+ * when receive a correct packet we update the send base immediately
+ * @param ackPkt
+ */
 void SRRdtSender::receive(const Packet &ackPkt) {
     int checkSum=pUtils->calculateCheckSum(ackPkt);
     if(ackPkt.checksum==checkSum) {
         pUtils->printPacket("发送方正确收到确认", ackPkt);
         this->send_base = ackPkt.acknum + 1;
-        if (this->send_base == this->nextSeqNum)
-            pns->stopTimer(SENDER, this->nextSeqNum);
-        else
-            pns->startTimer(SENDER, Configuration::TIME_OUT, this->nextSeqNum);
+        pns->stopTimer(SENDER,ackPkt.acknum);
     }
 }
+/**
+ * we resend  the packet numbered seqNum and start a new timer for it.
+ * @param seqNum
+ */
 void SRRdtSender::timeoutHandler(int seqNum) {
     pns->stopTimer(SENDER,seqNum);
     pns->startTimer(SENDER,Configuration::TIME_OUT,seqNum);
