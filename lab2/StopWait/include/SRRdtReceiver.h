@@ -18,11 +18,17 @@ public:
 public:
     void receive(const Packet &packet);
 };
-SRRdtReceiver::SRRdtReceiver():rcv_base(0) {
-    for(int i=0;i<MAX_RECEIVER_BUF;i++)
-        this->rcvPkt[i].seqnum=0;
+SRRdtReceiver::SRRdtReceiver():rcv_base(1) {
+    for(auto & i : this->rcvPkt)
+        i.seqnum=0;
 }
 SRRdtReceiver::~SRRdtReceiver() noexcept {}
+/**
+ * if we receive a correct packet, we send a acknowledge packet and store the packet in buffer
+ * first, and then we check the next number has been received whether or not, if so, we diliver
+ * it to the app layer.
+ * @param packet
+ */
 void SRRdtReceiver::receive(const Packet &packet) {
     int checkSum=pUtils->calculateCheckSum(packet);
     if(checkSum==packet.checksum)
@@ -33,6 +39,7 @@ void SRRdtReceiver::receive(const Packet &packet) {
         ackPkt.acknum=packet.seqnum;
         ackPkt.checksum=0;
         ackPkt.checksum=pUtils->calculateCheckSum(ackPkt);
+        pUtils->printPacket("接受方发送确认报文",ackPkt);
         pns->sendToNetworkLayer(SENDER,ackPkt);
     }
     if(this->rcvPkt[this->rcv_base].seqnum!=0){//deliver it to app layer in order

@@ -1,10 +1,13 @@
 //
-// Created by JackTian on 2020/10/19.
+// Created by JackTian on 2020/10/27.
 //
-#include "GBNRdtReceiver.h"
-#include "GBNRdtSender.h"
-#include "Global.h"
+//
+// Created by JackTian on 2020/10/21.
+//
 //#define PC
+#include "TCPRdtSender.h"
+#include "TCPRdtReceiver.h"
+#include "Global.h"
 #ifdef PC
 #define INPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/input.txt"
 #define OUTPUT "/mnt/c/Users/Administrator/Desktop/ComputerNetwork/lab2/output.txt"
@@ -12,12 +15,10 @@
 #define INPUT "/mnt/c/Users/JackTian/Development/Program/CXXProject/ComputeNetwork/lab2/input.txt"
 #define OUTPUT "/mnt/c/Users/JackTian/Development/Program/CXXProject/ComputeNetwork/lab2/output.txt"
 #endif
-
-
 int main(int argc, char* argv[])
 {
-    RdtSender *ps = new GBNRdtSender();
-    RdtReceiver * pr = new GBNRdtReceiver();
+    RdtSender *ps = new TCPRdtSender();
+    RdtReceiver * pr = new TCPRdtReceiver();
     pns->setRunMode(0);  //VERBOS模式
 //	pns->setRunMode(1);  //安静模式
     pns->init();
